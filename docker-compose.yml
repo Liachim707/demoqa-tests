@@ -1,0 +1,61 @@
+services:
+
+  selenoid:
+    image: aerokube/selenoid:latest-release
+    container_name: selenoid
+    restart: unless-stopped
+
+    ports:
+      - "4444:4444"
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./selenoid:/etc/selenoid:ro"
+
+    command:
+      [
+        "-conf",
+        "/etc/selenoid/browsers.json",
+        "-container-network",
+        "demoqa-tests"
+      ]
+
+  selenoid-ui:
+    image: aerokube/selenoid-ui:latest-release
+    container_name: selenoid-ui
+
+    ports:
+      - "8080:8080"
+
+    command:
+      [
+        "--selenoid-uri",
+        "http://selenoid:4444"
+      ]
+
+    depends_on:
+      - selenoid
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - prometheus
+
+networks:
+  default:
+    name: demoqa-tests
